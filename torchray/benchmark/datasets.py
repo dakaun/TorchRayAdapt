@@ -540,9 +540,16 @@ def get_dataset(name,
     def get(this, default):
         return this if this is not None else default
 
-    if 'imagenet' in name:
+    if 'cifar' in name:
+        dataset_dir = get(dataset_dir, get_config()['benchmark']['cifar_dir'])
+        dataset = torchvision.datasets.CIFAR10(root=os.path.join(dataset_dir, subset),
+                                                train=True,
+                                                transform=transform,
+                                               download=download)
+    elif 'imagenet' in name:
         dataset_dir = get(dataset_dir,
                           get_config()['benchmark']['imagenet_dir'])
+        torchvision.datasets.ImageNet(os.path.join(dataset_dir, subset), split=subset, download=True) # dataset no longer publicly available
         dataset = ImageFolder(os.path.join(dataset_dir, subset),
                               transform=transform,
                               limiter=limiter,
