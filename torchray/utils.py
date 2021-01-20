@@ -32,7 +32,8 @@ _DEFAULT_CONFIG = {
         'coco_anno_dir': './data/datasets/coco/annotations',
         'imagenet_dir': './data/datasets/imagenet',
         'models_dir': './data/models',
-        'experiments_dir': './data'
+        'experiments_dir': './data',
+        'cifar_dir': './data/datasets/cifar'
     }
 }
 
