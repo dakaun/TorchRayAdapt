@@ -1,11 +1,14 @@
 import torchvision
 import torch
-from torchray.benchmark import datasets, models
+from torchray.benchmark import datasets, models, plot_example
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import time
 import os
+
+from torchray.attribution.grad_cam import grad_cam
+from torchray.attribution.gradient import gradient
 
 data = {
     'Cifar': 'cifar',
@@ -32,8 +35,10 @@ expl_methods = {
 }
 dataset_name = data['Cifar']
 modelarch_name = model_archs['Resnet']
+expl_method = expl_methods['Gradient']
+
 classnames = ['plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+           'deer', 'dog', 'frog', 'horse', 'ship', 'truck'] #todo integrate class names somewhere
 
 # DATASET
 # Pre-process the image and convert into a tensor
@@ -69,61 +74,41 @@ model = models.get_model(arch=modelarch_name,
 
 # transfer learning
 # try convnet as feature extractor, cause vgg much smaller than image net
-num_ftrs = model.fc.in_features
-model.fc = torch.nn.Linear(num_ftrs, 10)
-criterion = torch.nn.CrossEntropyLoss()
-optimizer_conv = torch.optim.SGD(model.fc.parameters(), lr=0.001, momentum=0.9)
-exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1) ## Decay LR by a factor of 0.1 every 7 epochs
+model, criterion, optimizer_conv, exp_lr_scheduler = models.transfer_learning_prep(model)
 
 # train_model
+# model = models.train_model(model, criterion, optimizer_conv, exp_lr_scheduler, dataloader, len(dataset_split), epochs=5)
 
-model = models.train_model(model, criterion, optimizer_conv, exp_lr_scheduler, dataloader, len(dataset_split), epochs=5)
-
-models.visualize_model(model, dataloader, classnames, num_images=6)
 # save model
 model_path = './models/'
-if not os.path.exists(model_path): os.mkdir(model_path)
-torch.save(model.state_dict(), model_path + 'cifar_on_resnet.pth')
+# if not os.path.exists(model_path): os.mkdir(model_path)
+# torch.save(model.state_dict(), model_path + 'cifar_on_resnet.pth')
+
 # load trained model
 model.load_state_dict(torch.load(model_path + 'cifar_on_resnet.pth'))
 
+models.visualize_model(model, dataloader, classnames, num_images=6)
 
+# todo Expected 4-dimensional input for 4-dimensional weight [64, 3, 7, 7], but got 3-dimensional input of size [3, 224, 224] instead
+if expl_method == 'grad_cam':
+    grad_cam_layer = '' #todo add layername # features.29'
+    saliency = grad_cam(
+        model = model,
+        input = image,
+        target = label,
+        saliency_layer = grad_cam_layer
+        # resize= ?
+    )
+elif expl_method == 'gradient':
+    saliency = gradient(
+        model = model,
+        input = image,
+        target = label
+        # resize = ?
+        # smooth = 0.02
+    )
+else:
+    assert False
 
+plot_example(image, saliency, expl_method, label)
 
-'''
-def imshow(inp, title=None):
-    """Imshow for Tensor."""
-    inp = inp.numpy().transpose((1, 2, 0))
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    inp = std * inp + mean
-    inp = np.clip(inp, 0, 1)
-    plt.imshow(inp)
-    if title is not None:
-        plt.title(title)
-    plt.pause(0.001)  # pause a bit so that plots are updated
-
-# visualize model
-def visualize_training(model, num_img=6):
-    was_training = model.training
-    model.eval()
-    images_so_far = 0
-    fig = plt.figure()
-
-    with torch.no_grad():
-        for i, (inputs, labels) in enumerate(dataloader):
-            outputs = model(inputs)
-            _, preds = torch.max(outputs)
-
-            for j in range(inputs.size()[0]):
-                images_so_far += 1
-                ax = plt.subplot(num_img//2, 2, images_so_far)
-                ax.axis('off')
-                ax.set_title(f'predicted: {classnames[preds[j]]}')
-                imshow(inputs.cpu().data[j])
-
-                if images_so_far == num_img:
-                    model.train(mode=was_training)
-                    return
-        model.train(mode=was_training)
-'''
