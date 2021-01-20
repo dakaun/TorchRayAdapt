@@ -345,7 +345,7 @@ def get_model(arch='vgg16',
     return model
 
 
-def transfer_learning_prep(model,):
+def transfer_learning_prep(model):
     '''
     adapt defined model with pretrained weights from imagenet to the dataset using.
     use model as fixed feature extractor by freezing weights except final fully connected layer and train only these.
