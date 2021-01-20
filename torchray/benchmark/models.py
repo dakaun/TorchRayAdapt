@@ -22,6 +22,9 @@ import os
 import copy
 import types
 import re
+import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 from collections import OrderedDict
 
@@ -277,16 +280,21 @@ def get_model(arch='vgg16',
         num_classes = 80
     elif 'imagenet' in dataset:
         num_classes = 1000
+    elif 'cifar' in dataset:
+        num_classes = 10
     else:
         assert False, 'Unknown dataset {}'.format(dataset)
 
     # Get/load the model from torchvision.
-    model = models.__dict__[arch](pretrained='imagenet' in dataset)
+    if ('voc' or 'coco') in dataset:
+        model = models.__dict__[arch]()
+    else:
+        model = models.__dict__[arch](pretrained='imagenet')
 
     if arch == 'inception_v3':
         model.aux_logits = False
 
-    if 'imagenet' not in dataset:
+    if ('voc' or 'coco') in dataset: #'imagenet' not in dataset:
         # The torchvision models terminate in a classifier for ImageNet.
         # Replace that classifier if we target a different dataset.
         last_name, last_module = list(model.named_modules())[-1]
@@ -331,7 +339,98 @@ def get_model(arch='vgg16',
     # Set model to evaluation mode.
     model.eval()
 
+    for param in model.parameters():
+        param.requires_grad_(False)
+
     return model
+
+
+def transfer_learning_prep(model,):
+    '''
+    adapt defined model with pretrained weights from imagenet to the dataset using.
+    use model as fixed feature extractor by freezing weights except final fully connected layer and train only these.
+    Returns:
+
+    '''
+    # try convnet as feature extractor, cause vgg much smaller than image net
+    num_ftrs = model.fc.in_features
+    model.fc = torch.nn.Linear(num_ftrs, 10)
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer_conv = torch.optim.SGD(model.fc.parameters(), lr=0.001, momentum=0.9)
+    exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_conv, step_size=7,
+                                                       gamma=0.1)  ## Decay LR by a factor of 0.1 every 7 epochs
+    return model, criterion, optimizer_conv, exp_lr_scheduler
+
+
+def train_model(model, criterion, optimizer, scheduler, dataloader, len_dataset, epochs = 10):
+    start = time.time()
+    for epoch in range(epochs):
+        print(f'Epoch {epoch} / {epochs-1}')
+
+        # todo add validation to training ?
+        model.train()
+
+        running_loss = 0.0
+        running_corrects = 0
+
+        # forward
+        for i, (inputs, labels) in enumerate(dataloader):
+            optimizer.zero_grad() # zero parameter gradients
+            with torch.set_grad_enabled(True):
+                outputs = model(inputs)
+                _, preds = torch.max(outputs, 1)
+                loss = criterion(outputs, labels)
+
+                # backward + optimize
+                loss.backward()
+                optimizer.step()
+
+            running_loss += loss.item() * inputs.size(0)
+            running_corrects += torch.sum(preds == labels.data)
+
+            if i % 100 == 0:
+                print(f'[{epoch}, {i}] loss: {running_loss / 100}')
+
+        scheduler.step()
+
+        epoch_loss = running_loss / len_dataset
+        epoch_acc = running_corrects.double() / len_dataset
+        print(f'Loss: {epoch_loss} Acc: {epoch_acc}')
+        stop = time.time() - start
+        print('Time elapsed: {:.0f}m {:.0f}s'.format(stop//60, stop %60))
+        print()
+    time_elapsed = time.time() - start
+    print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
+    return model
+
+
+def visualize_model(model, dataloader, classnames, num_images=6):
+    was_training = model.training
+    model.eval()
+    fig = plt.figure()
+    images_so_far = 0
+    with torch.no_grad():
+        for i, (inputs, labels) in enumerate(dataloader):
+            outputs = model(inputs)
+            _, preds = torch.max(outputs,1)
+
+            for j in range(inputs.size()[0]):
+                images_so_far +=1
+                ax = plt.subplot(num_images//2, 2, images_so_far) # todo ValueError: num must be 1 <= num <= 6, not 7
+                ax.axis('off')
+                ax.set_title(f'predicted {classnames[preds[j]]}')
+                img = inputs.cpu().data[j].numpy().transpose((1,2,0))
+                mean = np.array([0.5, 0.5, 0.5])
+                std = np.array([0.5, 0.5, 0.5])
+                img = std*img+mean
+                img = np.clip(img, 0, 1)
+                plt.imshow(img)
+                plt.pause(0.001)
+                if images_so_far==num_images:
+                    plt.show()
+                    model.train(mode=was_training)
+                    break
+        model.train(mode=was_training)
 
 
 def get_transform(dataset='imagenet', size=224):
