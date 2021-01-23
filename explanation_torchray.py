@@ -56,8 +56,9 @@ dataset = datasets.get_dataset(name=dataset_name,
                                download=True,
                                transform= transform
                                )
-dataset_split = torch.utils.data.Subset(dataset,indices=range(5000))
-dataloader = torch.utils.data.DataLoader(dataset_split, batch_size=64, shuffle=True, num_workers=4)
+dataset_split = torch.utils.data.Subset(dataset,indices=range(2000))
+dataloader = torch.utils.data.DataLoader(dataset_split, batch_size=4, shuffle=True, num_workers=4)
+# todo work with different batch_sizes, training larger than saliency generation. how ?
 
 # IMAGE + CATEGORY_ID
 image, label = dataset.__getitem__(np.random.randint(0,len(dataset.data)))
@@ -69,15 +70,14 @@ model = models.get_model(arch=modelarch_name,
                   )
 
 # PREDICTION
-# model(image) # todo mismatch of classes. imagenet 1000, cifar 10 (?)
-# transfer learning https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html#convnet-as-fixed-feature-extractor
+# model(image) # mismatch of classes. imagenet 1000, cifar 10. therefore transfer learning
 
 # transfer learning
 # try convnet as feature extractor, cause vgg much smaller than image net
 model, criterion, optimizer_conv, exp_lr_scheduler = models.transfer_learning_prep(model)
 
 # train_model
-# model = models.train_model(model, criterion, optimizer_conv, exp_lr_scheduler, dataloader, len(dataset_split), epochs=5)
+# model = models.train_model(model, criterion, optimizer_conv, exp_lr_scheduler, dataloader, len(dataset_split), epochs=15)
 
 # save model
 model_path = './models/'
@@ -89,26 +89,25 @@ model.load_state_dict(torch.load(model_path + 'cifar_on_resnet.pth'))
 
 models.visualize_model(model, dataloader, classnames, num_images=6)
 
-# todo Expected 4-dimensional input for 4-dimensional weight [64, 3, 7, 7], but got 3-dimensional input of size [3, 224, 224] instead
+images, labels = iter(dataloader).next()
 if expl_method == 'grad_cam':
-    grad_cam_layer = '' #todo add layername # features.29'
+    grad_cam_layer = 'layer4'
     saliency = grad_cam(
         model = model,
-        input = image,
-        target = label,
+        input = images,
+        target = labels,
         saliency_layer = grad_cam_layer
         # resize= ?
     )
 elif expl_method == 'gradient':
     saliency = gradient(
         model = model,
-        input = image,
-        target = label
-        # resize = ?
-        # smooth = 0.02
+        input = images,
+        target = labels
     )
 else:
     assert False
 
-plot_example(image, saliency, expl_method, label)
+plot_example(images, saliency, expl_method, labels, classnames)
+print('show plot')
 
