@@ -77,6 +77,7 @@ def plot_example(input,
                  saliency,
                  method,
                  category_id,
+                 classnames,
                  show_plot=False,
                  save_path=None):
     """Plot an example.
@@ -107,8 +108,10 @@ def plot_example(input,
 
         plt.subplot(batch_size, 2, 2 + 2 * i)
         imsc(saliency[i], interpolation='none')
-        plt.title('{} for category {} ({})'.format(
-            method, IMAGENET_CLASSES[class_i], class_i), fontsize=8)
+        #plt.title('{} for category {} ({})'.format(
+        #    method, IMAGENET_CLASSES[class_i], class_i), fontsize=8)
+        plt.title(f'{method} for category {classnames[class_i]}', fontsize=8)
+        plt.tight_layout()
 
     # Save figure if path is specified.
     if save_path:
