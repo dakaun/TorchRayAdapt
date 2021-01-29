@@ -111,6 +111,6 @@ elif expl_method == 'gradient':
 else:
     assert False
 
-plot_example(images, saliency, expl_method, labels, classnames) # todo saliency map does not look good - not enough pixel
+plot_example(images, saliency, expl_method, labels, classnames)
 print('show plot')
 
