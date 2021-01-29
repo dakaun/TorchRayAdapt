@@ -33,7 +33,8 @@ _DEFAULT_CONFIG = {
         'imagenet_dir': './data/datasets/imagenet',
         'models_dir': './data/models',
         'experiments_dir': './data',
-        'cifar_dir': './data/datasets/cifar'
+        'cifar_dir': './data/datasets/cifar',
+        'str10_dir': './data/datasets/str10'
     }
 }
 

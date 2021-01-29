@@ -546,6 +546,8 @@ def get_dataset(name,
                                                 train=True,
                                                 transform=transform,
                                                download=download)
+        classnames = ['plane', 'car', 'bird', 'cat',
+                      'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     elif 'imagenet' in name:
         dataset_dir = get(dataset_dir,
                           get_config()['benchmark']['imagenet_dir'])
@@ -554,7 +556,16 @@ def get_dataset(name,
                               transform=transform,
                               limiter=limiter,
                               full_classes=IMAGENET_CLASSES)
-
+        classnames = IMAGENET_CLASSES
+    elif 'stl10' in name:
+        dataset_dir = get(dataset_dir, get_config()['benchmark']['str10_dir'])
+        dataset = torchvision.datasets.STL10(root=os.path.join(dataset_dir, subset),
+                                               split=subset,
+                                               folds=1,
+                                               transform=transform,
+                                               download=download)
+        classnames = ['airplane', 'bird', 'car', 'cat', 'deer', 'dog',
+                      'horse', 'monkey', 'ship', 'truck']
     elif 'voc' in name:
         dataset_dir = get(dataset_dir, get_config()['benchmark']['voc_dir'])
         year = name.split('_')[-1]
@@ -566,6 +577,7 @@ def get_dataset(name,
             download=download,
             limiter=limiter,
         )
+        classnames = VOC_CLASSES
 
     elif 'coco' in name:
         dataset_dir = get(dataset_dir, get_config()['benchmark']['coco_dir'])
@@ -579,8 +591,9 @@ def get_dataset(name,
                                 ann_path,
                                 transform=transform,
                                 limiter=limiter)
+        classnames = COCO_CLASSES
 
     else:
         assert False, "Unknown dataset {}".format(name)
 
-    return dataset
+    return dataset, classnames

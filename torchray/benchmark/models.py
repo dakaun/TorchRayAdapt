@@ -280,7 +280,7 @@ def get_model(arch='vgg16',
         num_classes = 80
     elif 'imagenet' in dataset:
         num_classes = 1000
-    elif 'cifar' in dataset:
+    elif ('cifar' in dataset) or ('stl10' in dataset):
         num_classes = 10
     else:
         assert False, 'Unknown dataset {}'.format(dataset)
@@ -410,26 +410,28 @@ def visualize_model(model, dataloader, classnames, num_images=6):
     fig = plt.figure()
     images_so_far = 0
     with torch.no_grad():
-        for i, (inputs, labels) in enumerate(dataloader):
-            outputs = model(inputs)
-            _, preds = torch.max(outputs,1)
+        inputs, labels = iter(dataloader).next() # todo only if batch_size > num_images
+        # for i, (inputs, labels) in enumerate(dataloader):
+        outputs = model(inputs)
+        _, preds = torch.max(outputs, 1)
 
-            for j in range(inputs.size()[0]):
-                images_so_far +=1
-                ax = plt.subplot(num_images//2, 2, images_so_far) # todo ValueError: num must be 1 <= num <= 6, not 7
-                ax.axis('off')
-                ax.set_title(f'predicted {classnames[preds[j]]}')
-                img = inputs.cpu().data[j].numpy().transpose((1,2,0))
-                mean = np.array([0.5, 0.5, 0.5])
-                std = np.array([0.5, 0.5, 0.5])
-                img = std*img+mean
-                img = np.clip(img, 0, 1)
-                plt.imshow(img)
-                plt.pause(0.001)
-                if images_so_far==num_images:
-                    plt.show()
-                    model.train(mode=was_training)
-                    break
+        for j in range(inputs.size()[0]):
+            images_so_far += 1
+            ax = plt.subplot(num_images//2, 2, images_so_far)
+            ax.axis('off')
+            ax.set_title(f'predicted {classnames[preds[j]]}')
+            img = inputs.cpu().data[j].numpy().transpose((1, 2, 0))
+            #mean = np.array([0.5, 0.5, 0.5])
+            #std = np.array([0.5, 0.5, 0.5])
+            #img = std*img+mean
+            img = np.clip(img, 0, 1)
+            plt.imshow(img)
+            plt.pause(0.001)
+            if images_so_far == num_images:
+                plt.show()
+                model.train(mode=was_training)
+                break
+
         model.train(mode=was_training)
 
 
