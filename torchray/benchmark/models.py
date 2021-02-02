@@ -345,24 +345,31 @@ def get_model(arch='vgg16',
     return model
 
 
-def transfer_learning_prep(model):
+def transfer_learning_prep(model, modelarch, nb_classes):
     '''
     adapt defined model with pretrained weights from imagenet to the dataset using.
     use model as fixed feature extractor by freezing weights except final fully connected layer and train only these.
     Returns:
 
     '''
-    # try convnet as feature extractor, cause vgg much smaller than image net
-    num_ftrs = model.fc.in_features
-    model.fc = torch.nn.Linear(num_ftrs, 10)
+    # try convnet as feature extractor, cause model much smaller than image net
+    if modelarch == 'resnet50':
+        num_ftrs = model.fc.in_features
+        model.fc = torch.nn.Linear(num_ftrs, nb_classes)
+        optimizer_conv = torch.optim.SGD(model.fc.parameters(), lr=0.001, momentum=0.9)
+    elif modelarch == 'vgg16':
+        num_ftrs = model.classifier[-1].in_features
+        model.classifier[-1] = torch.nn.Linear(num_ftrs, nb_classes)
+        optimizer_conv = torch.optim.SGD(model.classifier[-1].parameters(), lr=0.001, momentum=0.9)
+    else:
+        assert False, 'Unknown model for transfer learning {}'.format(modelarch)
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer_conv = torch.optim.SGD(model.fc.parameters(), lr=0.001, momentum=0.9)
     exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_conv, step_size=7,
                                                        gamma=0.1)  ## Decay LR by a factor of 0.1 every 7 epochs
     return model, criterion, optimizer_conv, exp_lr_scheduler
 
 
-def train_model(model, criterion, optimizer, scheduler, dataloader, len_dataset, epochs = 10):
+def train_model(model, criterion, optimizer, scheduler, dataloader, len_dataset, epochs=10):
     start = time.time()
     for epoch in range(epochs):
         print(f'Epoch {epoch} / {epochs-1}')
@@ -389,7 +396,7 @@ def train_model(model, criterion, optimizer, scheduler, dataloader, len_dataset,
             running_corrects += torch.sum(preds == labels.data)
 
             if i % 100 == 0:
-                print(f'[{epoch}, {i}] loss: {running_loss / 100}')
+                print(f'[{epoch}, {i}] loss: {running_loss / 100}') #todo adapt 100 to batch size
 
         scheduler.step()
 
