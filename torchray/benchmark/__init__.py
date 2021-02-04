@@ -99,7 +99,7 @@ def plot_example(input,
     batch_size = len(input)
 
     plt.clf()
-    for i in range(batch_size):
+    for i in range(1):
         class_i = category_id[i % len(category_id)]
 
         plt.subplot(batch_size, 2, 1 + 2 * i)
