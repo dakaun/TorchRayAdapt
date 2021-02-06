@@ -31,10 +31,13 @@ expl_methods = {
     'Meaningful_perturbation' : 'meaningful_perturbation'
 }
 # set by the user
-dataset_name = data['Cifar']
-modelarch_name = model_archs['VGG']
-expl_method = expl_methods['Meaningful_perturbation']
 own_image = True
+expl_method = expl_methods['Meaningful_perturbation']
+modelarch_name = model_archs['VGG']
+dataset_name = data['Cifar']
+
+
+
 
 shape = 224  # defined by model
 transform = torchvision.transforms.Compose([
