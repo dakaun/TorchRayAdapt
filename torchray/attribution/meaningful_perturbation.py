@@ -76,6 +76,7 @@ def train_mask(model, input, targets):
         upsample = torch.nn.UpsamplingBilinear2d(size=(224, 224))
     optimizer = torch.optim.Adam([mask], lr=learning_rate)
 
+    print('Starting training to learn mask')
     for i in range(max_iterations):
         if i%100==0:
             print('Iter ', i)
