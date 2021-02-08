@@ -12,7 +12,8 @@ from torchray.attribution.meaningful_perturbation import train_mask
 data = {
     'Cifar': 'cifar',
     'Imagenet': 'imagenet',
-    'STL10': 'stl10'
+    'STL10': 'stl10',
+    'Own_dataset': 'own'  # choose if data is available in ImageFolder
 }
 model_archs = {
     'VGG': 'vgg16',
@@ -31,12 +32,10 @@ expl_methods = {
     'Meaningful_perturbation' : 'meaningful_perturbation'
 }
 # set by the user
-own_image = True
+own_image = False  # true, if load own image from folder
 expl_method = expl_methods['Meaningful_perturbation']
 modelarch_name = model_archs['VGG']
-dataset_name = data['Cifar']
-
-
+dataset_name = data['Own_dataset']
 
 
 shape = 224  # defined by model
@@ -47,7 +46,6 @@ transform = torchvision.transforms.Compose([
     torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225]),
 ])
-# todo aus imagefolder laden
 if own_image:
     image_path = 'flute.jpg'
     labels = [558]
@@ -62,6 +60,7 @@ else:
     # DATASET
     dataset, classnames = datasets.get_dataset(name=dataset_name,
                                    subset='train',  # train oder val
+                                   # dataset_dir= ,  # define if own dataset in ImageFolder format
                                    download=True,
                                    transform= transform  # transformation dependent on dataset, right?
                                    )
