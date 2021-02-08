@@ -1,109 +1,28 @@
-# TorchRay
+# TorchRayAdapt
 
-The *TorchRay* package implements several visualization methods for deep
-convolutional neural networks using PyTorch. In this release, TorchRay focuses
-on *attribution*, namely the problem of determining which part of the input,
-usually an image, is responsible for the value computed by a neural network.
-
-*TorchRay* is research oriented: in addition to implementing well known
-techniques form the literature, it provides code for reproducing results that
-appear in several papers, in order to support *reproducible research*.
-
-*TorchRay* was initially developed to support the paper:
-
-* *Understanding deep networks via extremal perturbations and smooth masks.*
-  Fong, Patrick, Vedaldi.
-  Proceedings of the International Conference on Computer Vision (ICCV), 2019.
-
-## Examples
-
-The package contains several usage examples in the
-[`examples`](https://github.com/facebookresearch/TorchRay/tree/master/examples)
-subdirectory.
-
-Here is a complete example for using GradCAM:
-
-```python
-from torchray.attribution.grad_cam import grad_cam
-from torchray.benchmark import get_example_data, plot_example
-
-# Obtain example data.
-model, x, category_id, _ = get_example_data()
-
-# Grad-CAM backprop.
-saliency = grad_cam(model, x, category_id, saliency_layer='features.29')
-
-# Plots.
-plot_example(x, saliency, 'grad-cam backprop', category_id)
-```
-
-## Requirements
-
-TorchRay requires:
-
-* Python 3.4 or greater
-* pytorch 1.1.0 or greater
-* matplotlib
-
-For benchmarking, it also requires:
-
-* torchvision 0.3.0 or greater
-* pycocotools
-* mongodb (suggested)
-* pymongod (suggested)
-
-On Linux/macOS, using conda you can install
-
-```bash
-while read requirement; do conda install \
--c defaults -c pytorch -c conda-forge --yes $requirement; done <<EOF
-pytorch>=1.1.0
-pycocotools
-torchvision>=0.3.0
-mongodb
-pymongo
-EOF
-```
-
-## Installing TorchRay
-
-Using `pip`:
-
-```shell
-pip install torchray
-```
-
-From source:
-
-```shell
-python setup.py install
-```
-
-or
-
-```shell
-pip install .
-```
-
-## Full documentation
-
-The full documentation can be found
+This repository is an extension of the TorchRay Repository from Ruth C. Fong and Andrea Vedaldi 
+(https://github.com/facebookresearch/TorchRay).
+I've created one script which enables to easily choose from different models and datasets to display all available 
+explanation methods.
+Available explanation methods are those available in the original repository and additionally meaningful perturbations
+(https://github.com/jacobgil/pytorch-explain-black-box , Paper: https://arxiv.org/abs/1704.03296).
+All methods concentrate on visualization methods for CNNs using PyTorch and range from backpropagation methods
+to perturbation methods. 
+A full documention with an overview on all methods can be found 
 [here](https://facebookresearch.github.io/TorchRay).
 
-## Changes
+**Dependencies**  
+This repository uses python 3.8.5 and all further dependencies are listed in requirements.txt
 
-See the [CHANGELOG](CHANGELOG.md).
+**How to use:**  
+The script I wrote is *explanation_torchray.py*. 
+In the file all available models and datasets are listed and you can select the most convienient 
+combination for your project.
+Besides to common data sets (as e.g. CIFAR), you can also specify your own dataset using the Torch ImageFolder or 
+select only one image from your available data. 
+In addition to the selected model and data, different explanation methods can be tested.
 
-## Join the TorchRay community
-
-* Website: https://github.com/facebookresearch/TorchRay
-
-See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
-
-## The team
-
-TorchRay has been primarily developed by Ruth C. Fong and Andrea Vedaldi.
-
-## License
-
-TorchRay is CC-BY-NC licensed, as found in the [LICENSE](LICENSE) file.
+**Examples**  
+From TorchRay there are further usage examples in the 
+[`examples`](https://github.com/facebookresearch/TorchRay/tree/master/examples)
+subdirectory.
