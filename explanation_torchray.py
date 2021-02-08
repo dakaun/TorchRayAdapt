@@ -7,6 +7,8 @@ from torchray.benchmark import datasets, models, plot_example
 from torchray.attribution.grad_cam import grad_cam
 from torchray.attribution.gradient import gradient
 from torchray.attribution.meaningful_perturbation import train_mask
+from torchray.attribution.extremal_perturbation import extremal_perturbation, contrastive_reward
+from torchray.attribution.deconvnet import deconvnet
 
 data = {
     'Cifar': 'cifar',
@@ -21,20 +23,20 @@ model_archs = {
 expl_methods = {
     # 'center',
     # 'contrastive_excitation_backprop',
-    # 'deconvnet',
+    'Deconvnet':'deconvnet',
     # 'excitation_backprop',
     'Gradcam': 'grad_cam',
     'Gradient': 'gradient',
     # 'guided_backprop',
     # 'rise',
-    # 'extremal_perturbation'
+    'Extremal_perturbation': 'extremal_perturbation',
     'Meaningful_perturbation': 'meaningful_perturbation'
 }
 # set by the user
 own_image = True  # true, if load own image from folder
-expl_method = expl_methods['Meaningful_perturbation']
+expl_method = expl_methods['Extremal_perturbation']
 modelarch_name = model_archs['VGG']
-dataset_name = data['Own_dataset']
+dataset_name = data['Cifar']
 
 shape = 224  # defined by model
 transform = torchvision.transforms.Compose([
@@ -67,7 +69,8 @@ else:
 
     # MODEL
     model = models.get_model(arch=modelarch_name,
-                             dataset=dataset_name  # model for specified dataset
+                             dataset=dataset_name,  # model for specified dataset
+                             nb_classes=len(classnames)
                              )
 
     # TRANSFER LEARNING (feature extractor)
@@ -108,6 +111,21 @@ elif expl_method == 'meaningful_perturbation':
         model=model,
         input=images,
         targets=labels
+    )
+elif expl_method == 'extremal_perturbation':
+    saliency, _ = extremal_perturbation(
+        model=model,
+        input=images,
+        target=labels[0],
+        reward_func=contrastive_reward,
+        debug=True,
+        areas=[0.1]
+    )
+elif expl_method == 'deconvnet':
+    saliency = deconvnet(
+        model=model,
+        input=images,
+        target=labels
     )
 else:
     assert False, 'Explanation Method is not yet defined'

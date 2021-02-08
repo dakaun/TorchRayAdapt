@@ -253,6 +253,7 @@ def _replace_module(curr_module, module_path, new_module):
 
 def get_model(arch='vgg16',
               dataset='voc',
+              nb_classes=None,
               convert_to_fully_convolutional=False):
     r"""
     Return a reference model for the specified architecture and dataset.
@@ -282,6 +283,8 @@ def get_model(arch='vgg16',
         num_classes = 1000
     elif ('cifar' in dataset) or ('stl10' in dataset):
         num_classes = 10
+    elif 'own' in dataset:
+        num_classes = nb_classes
     else:
         assert False, 'Unknown dataset {}'.format(dataset)
 
