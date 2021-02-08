@@ -8,7 +8,6 @@ from torchray.attribution.grad_cam import grad_cam
 from torchray.attribution.gradient import gradient
 from torchray.attribution.meaningful_perturbation import train_mask
 
-
 data = {
     'Cifar': 'cifar',
     'Imagenet': 'imagenet',
@@ -20,23 +19,22 @@ model_archs = {
     'Resnet': 'resnet50'
 }
 expl_methods = {
-    #'center',
-    #'contrastive_excitation_backprop',
-    #'deconvnet',
-    #'excitation_backprop',
+    # 'center',
+    # 'contrastive_excitation_backprop',
+    # 'deconvnet',
+    # 'excitation_backprop',
     'Gradcam': 'grad_cam',
     'Gradient': 'gradient',
-    #'guided_backprop',
-    #'rise',
-    #'extremal_perturbation'
-    'Meaningful_perturbation' : 'meaningful_perturbation'
+    # 'guided_backprop',
+    # 'rise',
+    # 'extremal_perturbation'
+    'Meaningful_perturbation': 'meaningful_perturbation'
 }
 # set by the user
-own_image = False  # true, if load own image from folder
+own_image = True  # true, if load own image from folder
 expl_method = expl_methods['Meaningful_perturbation']
 modelarch_name = model_archs['VGG']
 dataset_name = data['Own_dataset']
-
 
 shape = 224  # defined by model
 transform = torchvision.transforms.Compose([
@@ -59,18 +57,18 @@ if own_image:
 else:
     # DATASET
     dataset, classnames = datasets.get_dataset(name=dataset_name,
-                                   subset='train',  # train oder val
-                                   # dataset_dir= ,  # define if own dataset in ImageFolder format
-                                   download=True,
-                                   transform= transform  # transformation dependent on dataset, right?
-                                   )
-    dataset_split = torch.utils.data.Subset(dataset,indices=range(40))
+                                               subset='train',  # train oder val
+                                               # dataset_dir= ,  # define if own dataset in ImageFolder format
+                                               download=True,
+                                               transform=transform  # transformation dependent on dataset, right?
+                                               )
+    dataset_split = torch.utils.data.Subset(dataset, indices=range(40))
     dataloader = torch.utils.data.DataLoader(dataset_split, batch_size=4, shuffle=True, num_workers=4)
 
     # MODEL
     model = models.get_model(arch=modelarch_name,
                              dataset=dataset_name  # model for specified dataset
-                      )
+                             )
 
     # TRANSFER LEARNING (feature extractor)
     model, criterion, optimizer_conv, exp_lr_scheduler = models.transfer_learning_prep(model,
@@ -90,7 +88,6 @@ else:
 
     # EXPLANATION METHOD
     images, labels = iter(dataloader).next()
-
 
 if expl_method == 'grad_cam':
     grad_cam_layer = ''
@@ -117,4 +114,3 @@ else:
 
 plot_example(images, saliency, expl_method, labels, classnames, show_plot=True,
              save_path=expl_method + '_' + classnames[labels[0]] + '.png')
-
