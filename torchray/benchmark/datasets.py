@@ -566,6 +566,13 @@ def get_dataset(name,
                                                download=download)
         classnames = ['airplane', 'bird', 'car', 'cat', 'deer', 'dog',
                       'horse', 'monkey', 'ship', 'truck']
+    elif 'own' in name:
+        dataset_dir = get(dataset_dir, None)
+        assert dataset_dir is not None, 'The directory of the ImageFolder is not defined'
+        dataset = torchvision.datasets.ImageFolder(root=dataset_dir,
+                                                   transform=transform)
+        classnames = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+        classnames.sort()
     elif 'voc' in name:
         dataset_dir = get(dataset_dir, get_config()['benchmark']['voc_dir'])
         year = name.split('_')[-1]
